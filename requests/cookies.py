@@ -341,7 +341,8 @@ class RequestsCookieJar(cookielib.CookieJar, MutableMapping):
         remove_cookie_by_name(self, name)
 
     def set_cookie(self, cookie, *args, **kwargs):
-        if hasattr(cookie.value, 'startswith') and cookie.value.startswith('"') and cookie.value.endswith('"'):
+        from .utils import has_method
+        if has_method(cookie.value, 'startswith') and cookie.value.startswith('"') and cookie.value.endswith('"'):
             cookie.value = cookie.value.replace('\\"', '')
         return super(RequestsCookieJar, self).set_cookie(cookie, *args, **kwargs)
 
@@ -426,8 +427,8 @@ class RequestsCookieJar(cookielib.CookieJar, MutableMapping):
 def _copy_cookie_jar(jar):
     if jar is None:
         return None
-
-    if hasattr(jar, 'copy'):
+    from .utils import has_method
+    if has_method(jar, 'copy'):
         # We're dealing with an instance of RequestsCookieJar
         return jar.copy()
     # We're dealing with a generic CookieJar instance

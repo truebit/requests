@@ -98,7 +98,7 @@ if sys.platform == 'win32':
 def dict_to_sequence(d):
     """Returns an internal sequence dictionary update."""
 
-    if hasattr(d, 'items'):
+    if has_method(d, 'items'):
         d = d.items()
 
     return d
@@ -108,13 +108,13 @@ def super_len(o):
     total_length = None
     current_position = 0
 
-    if hasattr(o, '__len__'):
+    if has_method(o, '__len__'):
         total_length = len(o)
 
     elif hasattr(o, 'len'):
         total_length = o.len
 
-    elif hasattr(o, 'fileno'):
+    elif has_method(o, 'fileno'):
         try:
             fileno = o.fileno()
         except io.UnsupportedOperation:
@@ -135,7 +135,7 @@ def super_len(o):
                     FileModeWarning
                 )
 
-    if hasattr(o, 'tell'):
+    if has_method(o, 'tell'):
         try:
             current_position = o.tell()
         except (OSError, IOError):
@@ -146,7 +146,7 @@ def super_len(o):
             if total_length is not None:
                 current_position = total_length
         else:
-            if hasattr(o, 'seek') and total_length is None:
+            if has_method(o, 'seek') and total_length is None:
                 # StringIO and BytesIO have seek but no useable fileno
                 try:
                     # seek to end of file
@@ -975,3 +975,9 @@ def rewind_body(prepared_request):
                                         "body for redirect.")
     else:
         raise UnrewindableBodyError("Unable to rewind request body for redirect.")
+
+
+def has_method(obj, method_name_str):
+    """Check if an object contains a method"""
+    method = getattr(obj, method_name_str, None)
+    return True if callable(method) else False

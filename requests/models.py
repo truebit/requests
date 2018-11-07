@@ -34,7 +34,7 @@ from ._internal_utils import to_native_string, unicode_is_ascii
 from .utils import (
     guess_filename, get_auth_from_url, requote_uri,
     stream_decode_response_unicode, to_key_val_list, parse_header_links,
-    iter_slices, guess_json_utf, super_len, check_header_validity)
+    iter_slices, guess_json_utf, super_len, check_header_validity, has_method)
 from .compat import (
     Callable, Mapping,
     cookielib, urlunparse, urlsplit, urlencode, str, bytes,
@@ -90,12 +90,12 @@ class RequestEncodingMixin(object):
 
         if isinstance(data, (str, bytes)):
             return data
-        elif hasattr(data, 'read') and callable(data.read):
+        elif has_method(data, 'read'):
             return data
-        elif hasattr(data, '__iter__'):
+        elif has_method(data, '__iter__'):
             result = []
             for k, vs in to_key_val_list(data):
-                if isinstance(vs, basestring) or not hasattr(vs, '__iter__'):
+                if isinstance(vs, basestring) or not has_method(vs, '__iter__'):
                     vs = [vs]
                 for v in vs:
                     if v is not None:
@@ -126,7 +126,7 @@ class RequestEncodingMixin(object):
         files = to_key_val_list(files or {})
 
         for field, val in fields:
-            if isinstance(val, basestring) or not hasattr(val, '__iter__'):
+            if isinstance(val, basestring) or not has_method(val, '__iter__'):
                 val = [val]
             for v in val:
                 if v is not None:
@@ -155,7 +155,7 @@ class RequestEncodingMixin(object):
 
             if isinstance(fp, (str, bytes, bytearray)):
                 fdata = fp
-            elif hasattr(fp, 'read'):
+            elif has_method(fp, 'read'):
                 fdata = fp.read()
             elif fp is None:
                 continue
@@ -180,7 +180,7 @@ class RequestHooksMixin(object):
 
         if isinstance(hook, Callable):
             self.hooks[event].append(hook)
-        elif hasattr(hook, '__iter__'):
+        elif has_method(hook, '__iter__'):
             self.hooks[event].extend(h for h in hook if isinstance(h, Callable))
 
     def deregister_hook(self, event, hook):
@@ -468,7 +468,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
                 body = body.encode('utf-8')
 
         is_stream = all([
-            hasattr(data, '__iter__'),
+            has_method(data, '__iter__'),
             not isinstance(data, (basestring, list, tuple, Mapping))
         ])
 
@@ -505,7 +505,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
             else:
                 if data:
                     body = self._encode_params(data)
-                    if isinstance(data, basestring) or hasattr(data, 'read'):
+                    if isinstance(data, basestring) or has_method(data, 'read'):
                         content_type = None
                     else:
                         content_type = 'application/x-www-form-urlencoded'
@@ -745,7 +745,7 @@ class Response(object):
 
         def generate():
             # Special case for urllib3.
-            if hasattr(self.raw, 'stream'):
+            if has_method(self.raw, 'stream'):
                 try:
                     for chunk in self.raw.stream(chunk_size, decode_content=True):
                         yield chunk
